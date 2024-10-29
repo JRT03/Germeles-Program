@@ -14,9 +14,13 @@ def RK4(func,f_val,y_init,t_step):
     return y_next
 
 def qm_function(f_val,qm_vector):
+    # qm_vector[0] = q
+    # qm_vector[1] = m
     qm_dot = np.zeros(2)
-    qm_dot[0] = beta * np.sqrt(qm_vector[1])
+    qm_dot[0] = beta * np.sqrt(qm_vector[1]) * (1 + (np.cos(theta0)**2)/(qm_vector[1]**2))**(3/4)
     qm_dot[1] = gamma * (qm_vector[0] * f_val)/(qm_vector[1])
+    # qm_dot[0] = dertivative of q
+    # qm_dot[1] = derivative of m
 
     return qm_dot
 
@@ -39,16 +43,16 @@ def find_time_index(values,array):
 # begin figure
 fig, axes = plt.subplots(2, 2, figsize=(10, 8)) 
 axes = axes.flatten()
-print(type(axes[0]))
 
 beta = 3.131
 gamma = 1.440
 h = 0.248
+theta0 = np.deg2rad(90)
 
 # number of spatial steps within the domain
-spatial_step_num = 100
+spatial_step_num = 200
 # set the number of time steps that will be simulated
-time_step_num = 100
+time_step_num = 200
 
 # setting up the spatial steps vector
 eta = np.zeros(spatial_step_num + 1 + time_step_num) # there is one more value of eta than there are spatial steps
@@ -59,7 +63,7 @@ time_vector = np.linspace(0,1,time_step_num+1) # there is one more time value th
 time_step = time_vector[1]
 
 # finds the indexes of the times that we want to plot
-plot_times = [0.1,0.5,0.8,1]
+plot_times = [0.1,0.2,0.8,1]
 plot_indexes = find_time_index(plot_times,time_vector)
 
 # specifying inital stratification
@@ -69,12 +73,11 @@ delta[:spatial_step_num] = 0
 
 # setting up other variables including applications of initial conditions
 f = np.zeros(spatial_step_num + time_step_num) # there is one less value of f than there is etas 
-f[0] = 1 - delta[0]
+f[0] = 1 - delta[0] # application of boundary condition
 m = np.zeros(spatial_step_num + 1 + time_step_num) # there are the same number of ms as etas 
-m[0] = 1
+m[0] = np.sin(theta0) # application of boundary condition
 q = np.zeros(spatial_step_num + 1 + time_step_num) # there are the same number of qs as etas
-q[0] = 1
-
+q[0] = 1 # application of boundary condtition
 
 # This is the first spatial step size (could replace this with a stenciling operation)
 spatial_step_size = eta[1] - eta[0]
@@ -99,8 +102,10 @@ for i in range(1,spatial_step_num):
     q[i+1] = qm_vector_next[0]
     m[i+1] = qm_vector_next[1]
 
+
 # time step loop
 for j in range(time_step_num):
+    
     
     # squeezing down of exisitng spatial steps
     eta[:spatial_step_num+1] = eta[:spatial_step_num+1] - h*(q[:spatial_step_num+1] - 1)*time_step
@@ -139,6 +144,9 @@ for j in range(time_step_num):
     if j + 1 in plot_indexes:
        plot_position = plot_indexes.index(j+1)
        axes[plot_position].stairs(delta[:spatial_step_num],eta[:spatial_step_num+1],orientation='horizontal',baseline=None)
+       #print(eta[:spatial_step_num+1])
+       #print(m[:spatial_step_num+1])
+       #axes[plot_position].axes.plot(eta[:spatial_step_num+1],m[:spatial_step_num+1])
        axes[plot_position].set_ylim(0,1)
        axes[plot_position].set_xlim(0,0.45)
        axes[plot_position].set_xlabel('$\delta$')
@@ -148,5 +156,3 @@ for j in range(time_step_num):
 plt.tight_layout()
 plt.show()
 
-plt.plot(eta,m)
-plt.show()
