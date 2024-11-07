@@ -54,20 +54,20 @@ f = [1]
 q = [free_q(1)]
 m = [free_m(1)]
 zeta_steps = [0,1] # zeta_steps will hold the respective locations of the steps
-tau = 0
 d_tau = 0.01
+tau = np.arange(0,12,d_tau)
+print(tau)
 
-plotting_tau = [0.1,0.6,0.8,1]
+plotting_tau = [0.25,1,2,4]
 
 # PLOTTING INITIAL CONDITINOS
-
 zeta_init = np.linspace(0,1,100)
 q_init = free_q(zeta_init)
 m_init = free_m(zeta_init)
 
 fig1 = plt.figure()
 ax1 = fig1.add_subplot(1, 1, 1)
-ax1.plot(m_init, zeta_init, label="tau = " + str(tau))
+ax1.plot(m_init, zeta_init, label="tau = " + str(tau[0]))
 ax1.set_title("Plot of m(zeta)")
 ax1.set_xlabel("m")
 ax1.set_ylabel("zeta")
@@ -75,12 +75,10 @@ ax1.legend()
 
 fig2 = plt.figure()
 ax2 = fig2.add_subplot(1, 1, 1)
-ax2.plot(q_init, zeta_init, label="tau = " + str(tau), color="orange")
+ax2.plot(q_init, zeta_init, label="tau = " + str(tau[0]), color="orange")
 ax2.set_title("Plot of q(zeta)")
 ax2.set_xlabel("q")
 ax2.set_ylabel("zeta")
-ax2.legend()
-
 # END OF PLOTTING INITAL CONDITIONS
 
 
@@ -88,7 +86,6 @@ ax2.legend()
 delta.append(0 + 1/free_q(1)) # Append the bouyancy at this stage
 zeta_steps[-1] = 1 - (free_q(1)) * d_tau # This is the location of the first step
 zeta_steps.append(1) 
-tau += d_tau 
 q_i = free_q(zeta_steps[1])
 m4_i = free_m(zeta_steps[1])**4
 f_i = 1 - q_i*(delta[1] - delta[0])
@@ -96,46 +93,25 @@ qm4_vector = np.array([q[0],m4_i])
 step = zeta_steps[-1] - zeta_steps[1]
 qm4_vector_next = RK4(qm4_funciton,1,qm4_vector,step)
 
-#print("f at top of domain: ",f_i)
-#print("q at top of domain: ",qm4_vector_next[0])
-#print("m at top of domain: ",qm4_vector_next[1]**(1/4))
-
 f = [1,f_i]
 q = [q_i,qm4_vector_next[0]]
 m = [m4_i**(1/4),qm4_vector_next[1]**(1/4)]
 
-#print('f:', f)
-#print('q:', q)
-#print('m:',m)
-#print('zeta steps:',zeta_steps)
-#print('delta', delta)
 
 fig3 = plt.figure()
 ax3 = fig3.add_subplot(1,1,1)
-ax3.stairs(delta,zeta_steps, orientation='horizontal',baseline=None,label='Tau =' +str(tau))
+ax3.stairs(delta,zeta_steps, orientation='horizontal',baseline=None,label='Tau =' +str(tau[1]))
 ax3.set_title('Stratification after first plume deposition')
 ax3.set_xlabel("delta")
 ax3.set_ylabel("zeta")
 
 
-#zeta_second = np.zeros(101)
-#zeta_second[0:100] = np.linspace(0,zeta_steps[1],100)
-#zeta_second[100] = 1
-
-#q_second = np.zeros(101)
-#q_second[0:100] = free_q(zeta_second[0:100])
-#q_second[100] = qm4_vector_next[0]
-
-#ax2.plot(q_second,zeta_second)
-
-
-
 # NOW FIRST LAYER IS DEPOSITED WE CAN ITERATE THROUGH UNTIL END
-while tau < 10*d_tau:
+for i in range(1,len(tau)):
     # NEW LAYER DEPOSITED
     delta.append(delta[-1] + f[-1]/q[-1]) # add the new delta value
-    for i in range(1,len(zeta_steps)):
-        zeta_steps[i] = zeta_steps[i] - q[i-1]*d_tau # update the step positionos
+    for l in range(1,len(zeta_steps)):
+        zeta_steps[l] = zeta_steps[l] - q[l-1]*d_tau # update the step positionos
     zeta_steps.append(1)
 
     # NOW PLUME CAN BE SOLVED AGAIN
@@ -153,28 +129,46 @@ while tau < 10*d_tau:
         q.append(qm4_vector_next[0])
         m.append((qm4_vector_next[1])**(1/4))
 
-    tau += d_tau
-    print(tau)
-    if tau in plotting_tau:
-        print('im_runnin')
-        zeta_coord = np.zeros(100 + len(zeta_steps-2))
-        zeta_coord[0:100] = np.linspace(0,zeta_steps[1],100)
+    for k in range(len(plotting_tau)):
+        if np.isclose(plotting_tau[k],tau[i]+d_tau,1e-6):
+            print('im_runnin')
+            print(tau[i]+d_tau)
+            zeta_coord = np.zeros(100 + len(zeta_steps)-2)
+            zeta_coord[0:100] = np.linspace(0,zeta_steps[1],100)
+            m_array = np.zeros(len(zeta_coord))
+            q_array = np.zeros(len(zeta_coord))
+            m_array[0:100] = free_m(zeta_coord[0:100])
+            q_array[0:100] = free_q(zeta_coord[0:100])
 
-        m_full = np.zeros(len(zeta_coord))
-        m_full[0:100] = free_m(zeta_coord[0:100])
-        #for k in range(1,len(m)):
-        #S    m[k+99] =        
-        
-        ax1.plot(m_init, zeta_init, label="tau = " + str(tau))
-        ax2.plot(q_init, zeta_init, label="tau = " + str(tau), color="orange")
-        ax3.stairs(delta,zeta_steps, orientation='horizontal',baseline=None,label='Tau =' +str(tau))
-    
+            for o in range(2,len(zeta_steps)):
+                zeta_coord[99 + o -1] = zeta_steps[o]
+                m_array[99 + o -1] = m[o-1]
+                q_array[99 + o -1] = q[o-1]
+            
+            # analytic bit
+            
+            front_pos = ((1 + 0.2*((18/5)**(1/3)))*(tau[i]+d_tau))**(-3/2)
+            front_delta = (10/3)*((5/18)**(1/3))
+            f_hat = (1 - front_pos**(5/3))/(1 - front_pos)
+            delta_inf = np.zeros(len(zeta_coord))
+            delta_inf[100:] = 5*((5/18)**(1/3))*(zeta_coord[100:]**(-2/3))*(1 - zeta_coord[100:]*10/39 - (zeta_coord[100:]**2)*155/8112)
+            analytical_const = 5*((5/18)**(1/3))*(((front_pos**(-2/4) - 1)/(1 - front_pos)) + 3*f_hat*((1-front_pos**(1/3))/(1- front_pos) - (5/8)*(1 - front_pos**(4/3))/(1 - front_pos) - (155/56784)*(1-front_pos**(7/3))/(1-front_pos)))
+            delta_analytic = np.zeros(len(zeta_coord))
+            delta_analytic[100:] = (f_hat**(2/3))*delta_inf[100:] - analytical_const
 
-#print('new zeta steps:',zeta_steps)
-#print('new delta:',delta)
-#print('new q:',q)
-#print('new m:',m)
-#print('new f',f)
 
-ax3.stairs(delta,zeta_steps, orientation='horizontal',baseline=None)
+            #print(m)
+
+            ax1.plot(m_array, zeta_coord, label="tau = " + str(plotting_tau[k]) )
+            ax2.plot(q_array, zeta_coord, label="tau = " + str(plotting_tau[k]))
+            ax3.stairs(delta,zeta_steps, orientation='horizontal',baseline=None,label='Tau =' +str(plotting_tau[k]))
+            ax3.plot(delta_analytic,zeta_coord)
+
+            
+
+ax3.stairs(delta,zeta_steps, orientation='horizontal',baseline=None,label='Tau =' +str(tau[-1]+d_tau))
+
+ax1.legend()
+ax2.legend()
+ax3.legend()
 plt.show()
