@@ -1,6 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+# Right now the difference I can see in the code is that I have used the germeles approach with simple staircase profile for f
+# Other code uses halfsteps in zeta in the middle of the RK4 to find the next f
+
 def RK4(func,f_val,qm4_init,step):
     '''
     INPUT
@@ -54,6 +57,8 @@ zeta_steps = [0,1] # zeta_steps will hold the respective locations of the steps
 tau = 0
 d_tau = 0.01
 
+plotting_tau = [0.1,0.6,0.8,1]
+
 # PLOTTING INITIAL CONDITINOS
 
 zeta_init = np.linspace(0,1,100)
@@ -62,7 +67,7 @@ m_init = free_m(zeta_init)
 
 fig1 = plt.figure()
 ax1 = fig1.add_subplot(1, 1, 1)
-ax1.plot(m_init, zeta_init, label="m(zeta)")
+ax1.plot(m_init, zeta_init, label="tau = " + str(tau))
 ax1.set_title("Plot of m(zeta)")
 ax1.set_xlabel("m")
 ax1.set_ylabel("zeta")
@@ -70,14 +75,13 @@ ax1.legend()
 
 fig2 = plt.figure()
 ax2 = fig2.add_subplot(1, 1, 1)
-ax2.plot(q_init, zeta_init, label="q(zeta)", color="orange")
+ax2.plot(q_init, zeta_init, label="tau = " + str(tau), color="orange")
 ax2.set_title("Plot of q(zeta)")
 ax2.set_xlabel("q")
 ax2.set_ylabel("zeta")
 ax2.legend()
 
 # END OF PLOTTING INITAL CONDITIONS
-
 
 
 # FIRST LAYER OF PLUME IS DEPOSITED
@@ -92,21 +96,23 @@ qm4_vector = np.array([q[0],m4_i])
 step = zeta_steps[-1] - zeta_steps[1]
 qm4_vector_next = RK4(qm4_funciton,1,qm4_vector,step)
 
-print("f at top of domain: ",f_i)
-print("q at top of domain: ",qm4_vector_next[0])
-print("m at top of domain: ",qm4_vector_next[1]**(1/4))
+#print("f at top of domain: ",f_i)
+#print("q at top of domain: ",qm4_vector_next[0])
+#print("m at top of domain: ",qm4_vector_next[1]**(1/4))
 
 f = [1,f_i]
 q = [q_i,qm4_vector_next[0]]
 m = [m4_i**(1/4),qm4_vector_next[1]**(1/4)]
-print(f)
-print(q)
-print(m)
 
+#print('f:', f)
+#print('q:', q)
+#print('m:',m)
+#print('zeta steps:',zeta_steps)
+#print('delta', delta)
 
 fig3 = plt.figure()
 ax3 = fig3.add_subplot(1,1,1)
-ax3.stairs(delta,zeta_steps, orientation='horizontal',baseline=None)
+ax3.stairs(delta,zeta_steps, orientation='horizontal',baseline=None,label='Tau =' +str(tau))
 ax3.set_title('Stratification after first plume deposition')
 ax3.set_xlabel("delta")
 ax3.set_ylabel("zeta")
@@ -123,16 +129,52 @@ ax3.set_ylabel("zeta")
 #ax2.plot(q_second,zeta_second)
 
 
+
 # NOW FIRST LAYER IS DEPOSITED WE CAN ITERATE THROUGH UNTIL END
-while tau < 2*d_tau:
-    # CALCULATE THE PLUME CHARACTERISTICS
+while tau < 10*d_tau:
+    # NEW LAYER DEPOSITED
+    delta.append(delta[-1] + f[-1]/q[-1]) # add the new delta value
+    for i in range(1,len(zeta_steps)):
+        zeta_steps[i] = zeta_steps[i] - q[i-1]*d_tau # update the step positionos
+    zeta_steps.append(1)
+
+    # NOW PLUME CAN BE SOLVED AGAIN
+    q = [free_q(zeta_steps[1])]
+    m = [free_m(zeta_steps[1])]
     f = [1]
-    for i in range(len(delta)):
-      pass
+
+    for j in range(1,len(zeta_steps)-1):
+        
+        
+        f.append(f[-1] - q[-1]*(delta[j] - delta[j-1]))
+        qm4_vector = np.array([q[-1],m[-1]**(1/4)])
+        step = zeta_steps[j+1] - zeta_steps[j]
+        qm4_vector_next = RK4(qm4_funciton,f[-1],qm4_vector,step)
+        q.append(qm4_vector_next[0])
+        m.append((qm4_vector_next[1])**(1/4))
 
     tau += d_tau
+    print(tau)
+    if tau in plotting_tau:
+        print('im_runnin')
+        zeta_coord = np.zeros(100 + len(zeta_steps-2))
+        zeta_coord[0:100] = np.linspace(0,zeta_steps[1],100)
+
+        m_full = np.zeros(len(zeta_coord))
+        m_full[0:100] = free_m(zeta_coord[0:100])
+        #for k in range(1,len(m)):
+        #S    m[k+99] =        
+        
+        ax1.plot(m_init, zeta_init, label="tau = " + str(tau))
+        ax2.plot(q_init, zeta_init, label="tau = " + str(tau), color="orange")
+        ax3.stairs(delta,zeta_steps, orientation='horizontal',baseline=None,label='Tau =' +str(tau))
     
 
+#print('new zeta steps:',zeta_steps)
+#print('new delta:',delta)
+#print('new q:',q)
+#print('new m:',m)
+#print('new f',f)
 
-
+ax3.stairs(delta,zeta_steps, orientation='horizontal',baseline=None)
 plt.show()
