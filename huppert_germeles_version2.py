@@ -56,7 +56,6 @@ m = [free_m(1)]
 zeta_steps = [0,1] # zeta_steps will hold the respective locations of the steps
 d_tau = 0.01
 tau = np.arange(0,12,d_tau)
-print(tau)
 
 plotting_tau = [0.25,1,2,4]
 
@@ -146,27 +145,64 @@ for i in range(1,len(tau)):
                 q_array[99 + o -1] = q[o-1]
             
             # analytic bit
-            
-            """ front_pos = ((1 + 0.2*((18/5)**(1/3)))*(tau[i]+d_tau))**(-3/2)
+        
+            front_pos = (1 + 0.2*((18/5)**(1/3))*(tau[i]+d_tau))**(-3/2) # this is zeta_0
             front_delta = (10/3)*((5/18)**(1/3))
             f_hat = (1 - front_pos**(5/3))/(1 - front_pos)
             delta_inf = np.zeros(len(zeta_coord))
             delta_inf[100:] = 5*((5/18)**(1/3))*(zeta_coord[100:]**(-2/3))*(1 - zeta_coord[100:]*10/39 - (zeta_coord[100:]**2)*155/8112)
-            analytical_const = 5*((5/18)**(1/3))*(((front_pos**(-2/4) - 1)/(1 - front_pos)) + 3*f_hat*((1-front_pos**(1/3))/(1- front_pos) - (5/8)*(1 - front_pos**(4/3))/(1 - front_pos) - (155/56784)*(1-front_pos**(7/3))/(1-front_pos)))
+            analytical_const = ( 
+            5*((5/18)**(1/3))*((front_pos**(-2/3) - 1)/(1 - front_pos)
+            + 3*(f_hat**(2/3))*((1 - front_pos**(1/3))/(1- front_pos)
+            - (5/78)*(1 - front_pos**(4/3))/(1 - front_pos) 
+            - (155/56784)*(1 - front_pos**(7/3))/(1- front_pos)))
+            )
+            
             delta_analytic = np.zeros(len(zeta_coord))
-            delta_analytic[100:] = (f_hat**(2/3))*delta_inf[100:] - analytical_const """
+            delta_analytic[100:] = -((f_hat**(2/3))*delta_inf[100:] - analytical_const)
+            delta_analytic[99] = (10/3)*(5/18)**(1/3)
 
-
-            #print(m)
 
             ax1.plot(m_array, zeta_coord, label="tau = " + str(plotting_tau[k]) )
             ax2.plot(q_array, zeta_coord, label="tau = " + str(plotting_tau[k]))
             ax3.stairs(delta,zeta_steps, orientation='horizontal',baseline=None,label='Tau =' +str(plotting_tau[k]))
-           # ax3.plot(delta_analytic,zeta_coord)
+            ax3.plot(delta_analytic[99:],zeta_coord[99:],linestyle='--',color='black')
 
             
 
 ax3.stairs(delta,zeta_steps, orientation='horizontal',baseline=None,label='Tau =' +str(tau[-1]+d_tau))
+
+zeta_coord = np.zeros(100 + len(zeta_steps)-2)
+zeta_coord[0:100] = np.linspace(0,zeta_steps[1],100)
+m_array = np.zeros(len(zeta_coord))
+q_array = np.zeros(len(zeta_coord))
+m_array[0:100] = free_m(zeta_coord[0:100])
+q_array[0:100] = free_q(zeta_coord[0:100])
+
+for o in range(2,len(zeta_steps)):
+    zeta_coord[99 + o -1] = zeta_steps[o]
+    m_array[99 + o -1] = m[o-1]
+    q_array[99 + o -1] = q[o-1]
+
+# analytic bit
+
+front_pos = (1 + 0.2*((18/5)**(1/3))*(tau[i]+d_tau))**(-3/2) # this is zeta_0
+front_delta = (10/3)*((5/18)**(1/3))
+f_hat = (1 - front_pos**(5/3))/(1 - front_pos)
+delta_inf = np.zeros(len(zeta_coord))
+delta_inf[100:] = 5*((5/18)**(1/3))*(zeta_coord[100:]**(-2/3))*(1 - zeta_coord[100:]*10/39 - (zeta_coord[100:]**2)*155/8112)
+analytical_const = ( 
+5*((5/18)**(1/3))*((front_pos**(-2/3) - 1)/(1 - front_pos)
++ 3*(f_hat**(2/3))*((1 - front_pos**(1/3))/(1- front_pos)
+- (5/78)*(1 - front_pos**(4/3))/(1 - front_pos) 
+- (155/56784)*(1 - front_pos**(7/3))/(1- front_pos)))
+)
+
+delta_analytic = np.zeros(len(zeta_coord))
+delta_analytic[100:] = -((f_hat**(2/3))*delta_inf[100:] - analytical_const)
+delta_analytic[99] = (10/3)*(5/18)**(1/3)
+ax3.plot(delta_analytic[99:],zeta_coord[99:],linestyle='--',color='black')
+
 
 ax1.legend()
 ax2.legend()
