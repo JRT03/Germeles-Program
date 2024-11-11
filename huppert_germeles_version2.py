@@ -101,7 +101,7 @@ m = [m4_i**(1/4),qm4_vector_next[1]**(1/4)]
 fig3 = plt.figure()
 ax3 = fig3.add_subplot(1,1,1)
 ax3.stairs(delta,zeta_steps, orientation='horizontal',baseline=None,label='Tau =' +str(tau[1]))
-ax3.set_title('Stratification after first plume deposition')
+ax3.set_title('Stratification of Space')
 ax3.set_xlabel("delta")
 ax3.set_ylabel("zeta")
 
@@ -147,14 +147,14 @@ for i in range(1,len(tau)):
             
             # analytic bit
             
-            front_pos = ((1 + 0.2*((18/5)**(1/3)))*(tau[i]+d_tau))**(-3/2)
+            """ front_pos = ((1 + 0.2*((18/5)**(1/3)))*(tau[i]+d_tau))**(-3/2)
             front_delta = (10/3)*((5/18)**(1/3))
             f_hat = (1 - front_pos**(5/3))/(1 - front_pos)
             delta_inf = np.zeros(len(zeta_coord))
             delta_inf[100:] = 5*((5/18)**(1/3))*(zeta_coord[100:]**(-2/3))*(1 - zeta_coord[100:]*10/39 - (zeta_coord[100:]**2)*155/8112)
             analytical_const = 5*((5/18)**(1/3))*(((front_pos**(-2/4) - 1)/(1 - front_pos)) + 3*f_hat*((1-front_pos**(1/3))/(1- front_pos) - (5/8)*(1 - front_pos**(4/3))/(1 - front_pos) - (155/56784)*(1-front_pos**(7/3))/(1-front_pos)))
             delta_analytic = np.zeros(len(zeta_coord))
-            delta_analytic[100:] = (f_hat**(2/3))*delta_inf[100:] - analytical_const
+            delta_analytic[100:] = (f_hat**(2/3))*delta_inf[100:] - analytical_const """
 
 
             #print(m)
@@ -162,7 +162,7 @@ for i in range(1,len(tau)):
             ax1.plot(m_array, zeta_coord, label="tau = " + str(plotting_tau[k]) )
             ax2.plot(q_array, zeta_coord, label="tau = " + str(plotting_tau[k]))
             ax3.stairs(delta,zeta_steps, orientation='horizontal',baseline=None,label='Tau =' +str(plotting_tau[k]))
-            ax3.plot(delta_analytic,zeta_coord)
+           # ax3.plot(delta_analytic,zeta_coord)
 
             
 
