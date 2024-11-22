@@ -4,26 +4,6 @@ import matplotlib.pyplot as plt
 # Right now the difference I can see in the code is that I have used the germeles approach with simple staircase profile for f
 # Other code uses halfsteps in zeta in the middle of the RK4 to find the next f
 
-def RK4(func,f_val,qm4_init,step):
-    '''
-    INPUT
-    func: function which returns first derivative of q and m^4 given q and m^4s
-    f_val: argument required for the function defined in func
-    qm4_init: initial values of q and m^4 in a vector
-    step: value over which the quantities were being integrated
-    OUTPUT
-    qm4_next: the next value of q and m^4 returned in a vectore
-    '''
-    
-    k1 = func(f_val,qm4_init)
-    k2 = func(f_val,qm4_init + k1*(step/2))
-    k3 = func(f_val,qm4_init + k2*(step/2))
-    k4 = func(f_val, qm4_init + k3*step)
-
-    qm4_next = qm4_init + step * (k1 + 2*k2 + 2*k3 + k4) / 6
-
-    return qm4_next
-
 
 def zeta_integration(step,f_inital,q_inital,m_inital,delta,prev_delta):
     zeta_halfstep = step / 2
@@ -39,23 +19,35 @@ def zeta_integration(step,f_inital,q_inital,m_inital,delta,prev_delta):
     return q_final, m_final, f_final 
 
 
+def zeta_integrationRK4(step,f_inital,q_inital,m_inital,delta,prev_delta):
+    half_step = step/2
 
-def qm4_funciton(f_val,qm4_vector):
-    '''
-    INPUT
-    f_val: value of f at this point in space required for caclculation of the derivative
-    qm4_vector: vector containing the value of q and m^4
-    OUTPUT
-    qm4_dot: derivatives of q and m^4 
-    '''
+    f_final = f_inital - q_inital * (delta - prev_delta)
+
+    k1q =  m_inital
+    k1m =  (q_inital * f_inital) / (2 * m_inital**3)
     
-    # creating output vector (derivative of input vector)
-    qm4_dot = np.zeros(2)
-    # updating the output vecotr using the equations provided
-    qm4_dot[0] = (qm4_vector[1])**(1/4)
-    qm4_dot[1] = 2*f_val*qm4_vector[0]
 
-    return qm4_dot
+    #f2 = f_inital - (q_inital + k1q*half_step) * (delta - prev_delta) * half_step/step 
+
+    k2q =  m_inital + k1m*half_step
+    k2m = (q_inital + k1q * half_step) * (f_final) / (2 * (m_inital + k1m * half_step)**3)
+
+    #f3 = f_inital - (q_inital + k2q * half_step) * (delta - prev_delta) * half_step/step
+
+    k3q =  m_inital + k2m * half_step
+    k3m = (q_inital + k2q * half_step) * (f_final) / (2 * (m_inital + k2m * half_step)**3)
+
+    #f4 = f_inital - (q_inital + k3q * step) * (delta - prev_delta)
+    #f_final = f_inital - (q_inital + k1q * step) * (delta - prev_delta)
+    k4q =  m_inital + k3m*step
+    k4m = (q_inital + k3q * step) * (f_final) / (2 * (m_inital + k3m * half_step)**3)
+
+
+    q_final = q_inital + step*(k1q + 2*k2q + 2*k3q + k4q)/6
+    m_final = m_inital + step*(k1m + 2*k2m + 2*k3m + k4m)/6
+    return q_final, m_final,f_final
+
 
 def free_q(zeta):
     return (3/10)*((18/5)**(1/3))*(zeta)**(5/3)
@@ -106,7 +98,7 @@ m_i = free_m(zeta_steps[1])
 
 
 step = zeta_steps[-1] - zeta_steps[1]
-q_next, m_next, f_next = zeta_integration(step,1,q_i,m_i,delta[1],delta[0])
+q_next, m_next, f_next = zeta_integrationRK4(step,1,q_i,m_i,delta[1],delta[0])
 
 print('FIRST STEP PRINT START')
 print('next q: ', q_next)
@@ -158,7 +150,7 @@ for i in range(1,len(tau)):
         
         step = zeta_steps[j+1] - zeta_steps[j]
         
-        q_next, m_next, f_next = zeta_integration(step,f[j-1],q[-1],m[j-1],delta[j],delta[j-1])
+        q_next, m_next, f_next = zeta_integrationRK4(step,f[j-1],q[-1],m[j-1],delta[j],delta[j-1])
         
         q.append(q_next)
         m.append(m_next)
