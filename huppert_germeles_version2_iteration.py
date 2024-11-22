@@ -31,11 +31,10 @@ def zeta_integration(step,f_inital,q_inital,m_inital,delta,prev_delta):
     q_halfstep = np.sqrt(q_inital**2 + zeta_halfstep*2*m_inital*q_inital)
     m_halfstep = np.sqrt(m_inital**2 + zeta_halfstep*q_inital*f_inital/(m_inital**2))
     f_halfstep = f_inital - zeta_halfstep*q_inital*(delta - prev_delta)/step
-    
 
     q_final = np.sqrt(q_inital**2 + step*2*m_halfstep*q_halfstep)
     m_final = np.sqrt(m_inital**2 + step*q_halfstep*f_halfstep/(m_halfstep**2))
-    f_final = f_inital - q_inital*(delta - prev_delta)
+    f_final = f_inital - q_halfstep*(delta - prev_delta)
 
     return q_final, m_final, f_final 
 
@@ -103,14 +102,21 @@ delta.append(0 + 1/free_q(1)) # Append the bouyancy at this stage
 zeta_steps[-1] = 1 - (free_q(1)) * d_tau # This is the location of the first step
 zeta_steps.append(1) 
 q_i = free_q(zeta_steps[1])
-m4_i = free_m(zeta_steps[1])**4
+m_i = free_m(zeta_steps[1])
+
 
 step = zeta_steps[-1] - zeta_steps[1]
-q_next, m_next, f_next = zeta_integration(step,1,q[0],m4_i)
+q_next, m_next, f_next = zeta_integration(step,1,q_i,m_i,delta[1],delta[0])
+
+print('FIRST STEP PRINT START')
+print('next q: ', q_next)
+print('next m: ', m_next)
+print('next f: ', f_next)
+print('FIRST STEP PRINT END')
 
 f = [1,f_next]
 q = [q_i,q_next]
-m = [m4_i**(1/4),m_next]
+m = [m_i,m_next]
 
 
 fig3 = plt.figure()
@@ -129,20 +135,34 @@ for i in range(1,len(tau)):
         zeta_steps[l] = zeta_steps[l] - q[l-1]*d_tau # update the step positionos
     zeta_steps.append(1)
 
+    if i == 1:
+        print('CHECKING FIRST TIME CHANGE')
+        print(delta)
+        print(zeta_steps)
+
     # NOW PLUME CAN BE SOLVED AGAIN
     q = [free_q(zeta_steps[1])]
     m = [free_m(zeta_steps[1])]
     f = [1]
 
+    if i ==1:
+        print('TOP OF PONDED REGION')
+        print('q values: ', q[0])
+        print('m value: ',m[0])
+        print('f value: ',f[0])
+        print('END OF PONDED REGION')
+
+
     for j in range(1,len(zeta_steps)-1):
         
         
-        f.append(f[-1] - q[-1]*(delta[j] - delta[j-1]))
-        qm4_vector = np.array([q[-1],m[-1]**(1/4)])
         step = zeta_steps[j+1] - zeta_steps[j]
-        qm4_vector_next = RK4(qm4_funciton,f[-1],qm4_vector,step)
-        q.append(qm4_vector_next[0])
-        m.append((qm4_vector_next[1])**(1/4))
+        
+        q_next, m_next, f_next = zeta_integration(step,f[j-1],q[-1],m[j-1],delta[j],delta[j-1])
+        
+        q.append(q_next)
+        m.append(m_next)
+        f.append(f_next)
 
     for k in range(len(plotting_tau)):
         if np.isclose(plotting_tau[k],tau[i]+d_tau,1e-6):
