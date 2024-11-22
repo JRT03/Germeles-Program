@@ -49,12 +49,67 @@ def zeta_integrationRK4(step,f_inital,q_inital,m_inital,delta,prev_delta):
     return q_final, m_final,f_final
 
 
+def plot_momentum(zeta_steps_array, m_array,zeta_size,tau):
+    global fig1
+    global ax1
+    if fig1 is None:
+        fig1 = plt.figure()
+        ax1 = fig1.add_subplot()
+        ax1.set_title("Plume Momentum Flux Through Room")
+        ax1.set_xlabel("m")
+        ax1.set_ylabel("$\\zeta$")
+        ax1.grid()
+
+    plotting_zeta = np.zeros(100 + zeta_size-3)
+    plotting_zeta[0:100] = np.linspace(0,zeta_steps_array[1],100)
+    plotting_zeta[99:] = zeta_steps_array[2:zeta_size]
+
+
+    plotting_m = np.zeros(len(plotting_zeta))
+    plotting_m[0:100] = free_m(plotting_zeta[0:100])
+    plotting_m[99:] = m_array[1:zeta_size-1]
+    ax1.plot(plotting_m, plotting_zeta , label="tau = " + str(tau))
+
+def plot_bouyancy_flux(zeta_steps_array, q_array,zeta_size,tau):
+    global fig2
+    global ax2
+    if fig2 is None:
+        fig2 = plt.figure()
+        ax2 = fig2.add_subplot()
+        ax2.set_title("Plume Bouyancy Flux Through Room")
+        ax2.set_xlabel("q")
+        ax2.set_ylabel("$\\zeta$")
+        ax2.grid()
+
+    ax2.set_ylabel("zeta")
+
+    plotting_zeta = np.zeros(100 + zeta_size-3)
+    plotting_zeta[0:100] = np.linspace(0,zeta_steps_array[1],100)
+    plotting_zeta[99:] = zeta_steps_array[2:zeta_size]
+
+
+    plotting_q = np.zeros(len(plotting_zeta))
+    plotting_q[0:100] = free_q(plotting_zeta[0:100])
+    plotting_q[99:] = q_array[1:zeta_size-1]
+    ax2.plot(plotting_q, plotting_zeta , label="tau = " + str(tau))
+
+
+
+ 
+
+
 def free_q(zeta):
     return (3/10)*((18/5)**(1/3))*(zeta)**(5/3)
 
 def free_m(zeta):
     return (1/2)*((18/5)**(1/3))*(zeta)**(2/3)
 
+
+fig1 = None
+ax1 = None
+
+fig2 = None
+ax2 = None
 
 # This code is initially programmed as if there is no exisitng stratification
 delta = [0] # delta will hold the step values of non-dimensional bouyancy 
@@ -63,16 +118,16 @@ q = [free_q(1)]
 m = [free_m(1)]
 zeta_steps = [0,1] # zeta_steps will hold the respective locations of the steps
 d_tau = 0.01
-tau = np.arange(0,0.1,d_tau)
+tau = np.arange(0,12,d_tau)
 
 plotting_tau = [0.25,1,2,4]
 
-delta_array = np.zeros(len(tau))
-f_array = np.zeros(len(tau))
-q_array = np.zeros(len(tau))
-m_array = np.zeros(len(tau))
-f_array = np.zeros(len(tau))
-zeta_steps_array = np.zeros(len(tau)+1)
+delta_array = np.zeros(len(tau)+1)
+f_array = np.zeros(len(tau)+1)
+q_array = np.zeros(len(tau)+1)
+m_array = np.zeros(len(tau)+1)
+f_array = np.zeros(len(tau)+1)
+zeta_steps_array = np.zeros(len(tau)+2)
 zeta_steps_array[-1] = 1
 zeta_steps_array[-2] = 0
 f_array[0] = 1
@@ -84,7 +139,7 @@ m_array[0] = free_m(1)
 zeta_init = np.linspace(0,1,100)
 q_init = free_q(zeta_init)
 m_init = free_m(zeta_init)
-
+'''
 fig1 = plt.figure()
 ax1 = fig1.add_subplot(1, 1, 1)
 ax1.plot(m_init, zeta_init, label="tau = " + str(tau[0]))
@@ -99,6 +154,7 @@ ax2.plot(q_init, zeta_init, label="tau = " + str(tau[0]), color="orange")
 ax2.set_title("Plot of q(zeta)")
 ax2.set_xlabel("q")
 ax2.set_ylabel("zeta")
+'''
 # END OF PLOTTING INITAL CONDITIONS
 
 
@@ -112,7 +168,6 @@ m_i = free_m(zeta_steps[1])
 
 step = zeta_steps[-1] - zeta_steps[1]
 q_next, m_next, f_next = zeta_integrationRK4(step,1,q_i,m_i,delta[1],delta[0])
-
 
 
 f = [1,f_next]
@@ -140,6 +195,8 @@ ax3.set_xlabel("delta")
 ax3.set_ylabel("zeta")
 
 
+zeta_size = 3
+
 # NOW FIRST LAYER IS DEPOSITED WE CAN ITERATE THROUGH UNTIL END
 for i in range(1,len(tau)):
     # NEW LAYER DEPOSITED
@@ -151,6 +208,7 @@ for i in range(1,len(tau)):
     delta_array[i+1] = delta_array[i] + f_array[i]/q_array[i]
     zeta_steps_array[1:i+2] = zeta_steps_array[1:i+2] - q_array[0:i+1]*d_tau
     zeta_steps_array[i+2] = 1
+    zeta_size += 1
 
 
     # NOW PLUME CAN BE SOLVED AGAIN
@@ -179,7 +237,13 @@ for i in range(1,len(tau)):
         q_array[j],m_array[j],f_array[j] = zeta_integrationRK4(step_ar,f_array[j-1],q_array[j-1],m_array[j-1],delta_array[j],delta_array[j-1])
 
 
+    for k in range(len(plotting_tau)):
+        if np.isclose(plotting_tau[k],tau[i]+d_tau,1e-6):
+            plot_momentum(zeta_steps_array,m_array,zeta_size, tau[i]+d_tau)
+            plot_bouyancy_flux(zeta_steps_array,q_array,zeta_size,tau[i] + d_tau)
 
+
+    '''
     for k in range(len(plotting_tau)):
         if np.isclose(plotting_tau[k],tau[i]+d_tau,1e-6):
             print('im_runnin')
@@ -219,6 +283,10 @@ for i in range(1,len(tau)):
             ax2.plot(q_array, zeta_coord, label="tau = " + str(plotting_tau[k]))
             ax3.stairs(delta,zeta_steps, orientation='horizontal',baseline=None,label='Tau =' +str(plotting_tau[k]))
             ax3.plot(delta_analytic[99:],zeta_coord[99:],linestyle='--',color='black')
+        '''
+
+
+plot_momentum(zeta_steps_array,m_array,zeta_size,tau[-1]+d_tau)
 
             
 
@@ -255,8 +323,7 @@ delta_analytic[100:] = -((f_hat**(2/3))*delta_inf[100:] - analytical_const)
 delta_analytic[99] = (10/3)*(5/18)**(1/3)
 ax3.plot(delta_analytic[99:],zeta_coord[99:],linestyle='--',color='black')
 
+if ax1 is not None:
+    ax1.legend()
 
-ax1.legend()
-ax2.legend()
-ax3.legend()
 plt.show()

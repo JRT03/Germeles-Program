@@ -74,18 +74,18 @@ m_init = free_m(zeta_init)
 
 fig1 = plt.figure()
 ax1 = fig1.add_subplot(1, 1, 1)
-ax1.plot(m_init, zeta_init, label="tau = " + str(tau[0]))
-ax1.set_title("Plot of m(zeta)")
+ax1.plot(m_init, zeta_init, label="$\\tau$ = " + str(tau[0]))
+ax1.set_title("Plot of m($\\zeta$)")
 ax1.set_xlabel("m")
-ax1.set_ylabel("zeta")
+ax1.set_ylabel("$\\zeta$")
 ax1.legend()
 
 fig2 = plt.figure()
 ax2 = fig2.add_subplot(1, 1, 1)
-ax2.plot(q_init, zeta_init, label="tau = " + str(tau[0]), color="orange")
-ax2.set_title("Plot of q(zeta)")
+ax2.plot(q_init, zeta_init, label="$\\tau$ = " + str(tau[0]), color="orange")
+ax2.set_title("Plot of q($\\zeta$)")
 ax2.set_xlabel("q")
-ax2.set_ylabel("zeta")
+ax2.set_ylabel("$\\zeta$")
 # END OF PLOTTING INITAL CONDITIONS
 
 
@@ -113,10 +113,10 @@ m = [m_i,m_next]
 
 fig3 = plt.figure()
 ax3 = fig3.add_subplot(1,1,1)
-ax3.stairs(delta,zeta_steps, orientation='horizontal',baseline=None,label='Tau =' +str(tau[1]))
+ax3.stairs(delta,zeta_steps, orientation='horizontal',baseline=None,label='$\\tau$ =' +str(tau[1]))
 ax3.set_title('Stratification of Space')
-ax3.set_xlabel("delta")
-ax3.set_ylabel("zeta")
+ax3.set_xlabel("$\\delta$")
+ax3.set_ylabel("$\\zeta$")
 
 
 # NOW FIRST LAYER IS DEPOSITED WE CAN ITERATE THROUGH UNTIL END
@@ -191,14 +191,14 @@ for i in range(1,len(tau)):
             delta_analytic[99] = (10/3)*(5/18)**(1/3)
 
 
-            ax1.plot(m_array, zeta_coord, label="tau = " + str(plotting_tau[k]) )
-            ax2.plot(q_array, zeta_coord, label="tau = " + str(plotting_tau[k]))
-            ax3.stairs(delta,zeta_steps, orientation='horizontal',baseline=None,label='Tau =' +str(plotting_tau[k]))
+            ax1.plot(m_array, zeta_coord, label="$\\tau$ = " + str(plotting_tau[k]) )
+            ax2.plot(q_array, zeta_coord, label="$\\tau$ = " + str(plotting_tau[k]))
+            ax3.stairs(delta,zeta_steps, orientation='horizontal',baseline=None,label='$\\tau$ =' +str(plotting_tau[k]))
             ax3.plot(delta_analytic[99:],zeta_coord[99:],linestyle='--',color='black')
 
             
 
-ax3.stairs(delta,zeta_steps, orientation='horizontal',baseline=None,label='Tau =' +str(tau[-1]+d_tau))
+ax3.stairs(delta,zeta_steps, orientation='horizontal',baseline=None,label='$\\tau$ =' +str(tau[-1]+d_tau))
 
 zeta_coord = np.zeros(100 + len(zeta_steps)-2)
 zeta_coord[0:100] = np.linspace(0,zeta_steps[1],100)
@@ -231,6 +231,10 @@ delta_analytic[100:] = -((f_hat**(2/3))*delta_inf[100:] - analytical_const)
 delta_analytic[99] = (10/3)*(5/18)**(1/3)
 ax3.plot(delta_analytic[99:],zeta_coord[99:],linestyle='--',color='black')
 
+
+ax1.grid()
+ax2.grid()
+ax3.grid()
 
 ax1.legend()
 ax2.legend()
