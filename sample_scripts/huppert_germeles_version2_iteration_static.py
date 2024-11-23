@@ -94,8 +94,20 @@ def plot_bouyancy_flux(zeta_steps_array, q_array,zeta_size,tau):
     ax2.plot(plotting_q, plotting_zeta , label="tau = " + str(tau))
 
 
+def plot_stratification(zeta_steps_array, delta_array, zeta_size, tau):
+    global fig3
+    global ax3
+    if fig3 is None:
+        fig3 = plt.figure()
+        ax3 = fig3.add_subplot()
+        ax3.set_title("Stratification Within Room")
+        ax3.set_xlabel("$\\delta$")
+        ax3.set_ylabel("$\\zeta$")
+        ax3.grid()
 
- 
+    ax3.stairs(delta_array[:zeta_size-1], zeta_steps_array[:zeta_size],orientation='horizontal',baseline=None,label='$\\tau$ = ' + str(tau))
+
+
 
 
 def free_q(zeta):
@@ -110,6 +122,9 @@ ax1 = None
 
 fig2 = None
 ax2 = None
+
+fig3 = None
+ax3 = None
 
 # This code is initially programmed as if there is no exisitng stratification
 delta = [0] # delta will hold the step values of non-dimensional bouyancy 
@@ -241,6 +256,7 @@ for i in range(1,len(tau)):
         if np.isclose(plotting_tau[k],tau[i]+d_tau,1e-6):
             plot_momentum(zeta_steps_array,m_array,zeta_size, tau[i]+d_tau)
             plot_bouyancy_flux(zeta_steps_array,q_array,zeta_size,tau[i] + d_tau)
+            plot_stratification(zeta_steps_array,delta_array,zeta_size,tau[i]+d_tau)
 
 
     '''
@@ -325,5 +341,11 @@ ax3.plot(delta_analytic[99:],zeta_coord[99:],linestyle='--',color='black')
 
 if ax1 is not None:
     ax1.legend()
+
+if ax2 is not None:
+    ax2.legend()
+
+if ax3 is not None:
+    ax3.legend()
 
 plt.show()
