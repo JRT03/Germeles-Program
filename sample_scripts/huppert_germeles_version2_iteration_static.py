@@ -133,7 +133,7 @@ q = [free_q(1)]
 m = [free_m(1)]
 zeta_steps = [0,1] # zeta_steps will hold the respective locations of the steps
 d_tau = 0.01
-tau = np.arange(0,12,d_tau)
+tau = np.arange(0,0.1,d_tau)
 
 plotting_tau = [0.25,1,2,4]
 
@@ -142,12 +142,15 @@ f_array = np.zeros(len(tau)+1)
 q_array = np.zeros(len(tau)+1)
 m_array = np.zeros(len(tau)+1)
 f_array = np.zeros(len(tau)+1)
+
+
 zeta_steps_array = np.zeros(len(tau)+2)
 zeta_steps_array[-1] = 1
 zeta_steps_array[-2] = 0
 f_array[0] = 1
 q_array[0] = free_q(1)
 m_array[0] = free_m(1)
+
 
 
 # PLOTTING INITIAL CONDITINOS
@@ -194,13 +197,14 @@ delta_array[1] = 0 + 1/free_q(1)
 zeta_steps_array[1:2] = 1 - free_q(1)*d_tau
 zeta_steps_array[2] = 1
 
+
 f_array[0] = 1
 q_array[0] = free_q(zeta_steps_array[1])
 m_array[0] = free_m(zeta_steps_array[1])
 
 step_ar = zeta_steps_array[2] - zeta_steps_array[1]
 q_array[1],m_array[1],f_array[1] = zeta_integrationRK4(step,1,q_array[0],m_array[0],delta[1],delta[0])
- 
+
 
 fig3 = plt.figure()
 ax3 = fig3.add_subplot(1,1,1)
@@ -224,7 +228,6 @@ for i in range(1,len(tau)):
     zeta_steps_array[1:i+2] = zeta_steps_array[1:i+2] - q_array[0:i+1]*d_tau
     zeta_steps_array[i+2] = 1
     zeta_size += 1
-
 
     # NOW PLUME CAN BE SOLVED AGAIN
     q = [free_q(zeta_steps[1])]
@@ -251,7 +254,8 @@ for i in range(1,len(tau)):
         step_ar = zeta_steps[j+1] - zeta_steps[j]
         q_array[j],m_array[j],f_array[j] = zeta_integrationRK4(step_ar,f_array[j-1],q_array[j-1],m_array[j-1],delta_array[j],delta_array[j-1])
 
-
+    
+    
     for k in range(len(plotting_tau)):
         if np.isclose(plotting_tau[k],tau[i]+d_tau,1e-6):
             plot_momentum(zeta_steps_array,m_array,zeta_size, tau[i]+d_tau)
@@ -301,6 +305,9 @@ for i in range(1,len(tau)):
             ax3.plot(delta_analytic[99:],zeta_coord[99:],linestyle='--',color='black')
         '''
 
+
+print('delta array: ', delta_array)
+print('zeta steps array: ', zeta_steps_array)
 
 plot_momentum(zeta_steps_array,m_array,zeta_size,tau[-1]+d_tau)
 
