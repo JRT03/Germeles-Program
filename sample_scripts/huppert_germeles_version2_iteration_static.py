@@ -133,9 +133,9 @@ q = [free_q(1)]
 m = [free_m(1)]
 zeta_steps = [0,1] # zeta_steps will hold the respective locations of the steps
 d_tau = 0.01
-tau = np.arange(0,0.1,d_tau)
+tau = np.arange(0,5,d_tau)
 
-plotting_tau = [0.25,1,2,4]
+plotting_tau = [1,4]
 
 delta_array = np.zeros(len(tau)+1)
 f_array = np.zeros(len(tau)+1)
