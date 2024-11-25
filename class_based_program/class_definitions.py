@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 class plume:
     def __init__(self,bouyant_flux,height):
-        # Hndling the bouancy flux input
+        # Handling the bouancy flux input
         if not isinstance(bouyant_flux, (int,float)):
             raise Exception('Bouyancy flux specified is not a number')
         self.bouyant_flux = bouyant_flux
@@ -168,7 +168,7 @@ class box:
             self.axd.plot(delta_analytic,zeta_coord,linestyle='--',color='black')
 
         self.axd.stairs(self.delta_array[:self.step_num+1],self.zeta_steps_array[:self.step_num+2],orientation='horizontal',baseline=None,label='$\\tau$ = ' + str(tau))
-        self.axd.legend()
+        self.axd.legend(loc='lower right')
 
     def plot_volume_flux(self,plume_index,tau):
         plume_obj = self.plume_list[plume_index]
