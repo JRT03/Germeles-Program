@@ -25,37 +25,6 @@ class plume:
         self.figf = None
         self.figq = None
 
-        
-
-
-'''
-def plot_bouyancy_flux(zeta_steps_array, q_array,zeta_size,tau):
-    global fig2
-    global ax2
-    if fig2 is None:
-        fig2 = plt.figure()
-        ax2 = fig2.add_subplot()
-        ax2.set_title("Plume Bouyancy Flux Through Room")
-        ax2.set_xlabel("q")
-        ax2.set_ylabel("$\\zeta$")
-        ax2.grid()
-
-    ax2.set_ylabel("zeta")
-
-    plotting_zeta = np.zeros(100 + zeta_size-3)
-    plotting_zeta[0:100] = np.linspace(0,zeta_steps_array[1],100)
-    plotting_zeta[99:] = zeta_steps_array[2:zeta_size]
-
-
-    plotting_q = np.zeros(len(plotting_zeta))
-    plotting_q[0:100] = free_q(plotting_zeta[0:100])
-    plotting_q[99:] = q_array[1:zeta_size-1]
-    ax2.plot(plotting_q, plotting_zeta , label="tau = " + str(tau))
-
-    def print_full_state(self):
-        print('f array: ',self.f_array)
-        print('m array: ',self.m_array)
-        print('q array: ',self.q_array)'''
 
 class box:
     def __init__(self,inital_delta,inital_zeta_steps,time_array,plume_list):
@@ -65,14 +34,14 @@ class box:
         if not isinstance(inital_delta, np.ndarray):
             raise Exception('Inital delta should be an array or list')
         self.delta_array = np.zeros(len(inital_delta)+len(time_array)+1)
-        self.delta_array[0:len(inital_delta)] = inital_delta[0:len(inital_delta)]
+        self.delta_array[1:len(inital_delta)+1] = inital_delta[:]
 
         # Handling the intial stratification zeta steps
         if not isinstance(inital_zeta_steps, np.ndarray):
             raise Exception('Inital delta should be an array or list')
         
         self.zeta_steps_array = np.zeros(len(inital_zeta_steps) + len(time_array) + 2)
-        self.zeta_steps_array[0:len(inital_zeta_steps)] = inital_zeta_steps[0:len(inital_zeta_steps)]
+        self.zeta_steps_array[1:len(inital_zeta_steps)+1] = inital_zeta_steps[:]
         self.zeta_steps_array[len(inital_zeta_steps)+1] = 1
 
         self.step_num = len(inital_zeta_steps)
@@ -134,13 +103,43 @@ class box:
 
     def deposit_layer(self,time_step):
         for plume_obj in self.plume_list:
-            self.delta_array[self.step_num+1] = self.delta_array[self.step_num] + plume_obj.f_array[self.step_num]/plume_obj.q_array[self.step_num]
-            self.zeta_steps_array[1:self.step_num+2] = self.zeta_steps_array[1:self.step_num+2] - plume_obj.q_array[0:self.step_num+1]*time_step
-            self.zeta_steps_array[self.step_num+2] = 1
-            self.step_num +=1
+            f_negative_index = None
+            for i in range(self.step_num+1):
+                if plume_obj.f_array[i] < 0:
+                    f_negative_index = i
+                    break
+            
+            if f_negative_index is None:
+                self.delta_array[self.step_num+1] = self.delta_array[self.step_num] + plume_obj.f_array[self.step_num]/plume_obj.q_array[self.step_num]
+                self.zeta_steps_array[1:self.step_num+2] = self.zeta_steps_array[1:self.step_num+2] - plume_obj.q_array[0:self.step_num+1]*time_step
+                self.zeta_steps_array[self.step_num+2] = 1
+                self.step_num +=1
+            
+            else:
+                #print('begin solve')
+                #print('f_negative index: ',f_negative_index)
+                f_negative_zeta = self.zeta_steps_array[f_negative_index] + (self.zeta_steps_array[f_negative_index+1]- self.zeta_steps_array[f_negative_index])*(plume_obj.f_array[f_negative_index-1])/(plume_obj.f_array[f_negative_index-1] - plume_obj.f_array[f_negative_index])
+                #print('f_negative zeta:',f_negative_zeta)
+                #print('previous delta:',self.delta_array[:self.step_num+1])
+                self.delta_array[f_negative_index+1:self.step_num+2] = self.delta_array[f_negative_index:self.step_num+1]
+                self.delta_array[f_negative_index+1] = self.delta_array[f_negative_index]
+                #print('new delta:',self.delta_array[:self.step_num+1])
+                
+                #print('begin alteration of arrays')
+                #print('first zeta steps', print(self.zeta_steps_array[:self.step_num+2]))
+                self.zeta_steps_array[1:f_negative_index+1] = self.zeta_steps_array[1:f_negative_index+1] - plume_obj.q_array[0:f_negative_index]*time_step
+                #print('after squeezing below',print(self.zeta_steps_array[:self.step_num+2]))
+                
+                
+                self.zeta_steps_array[f_negative_index+1:self.step_num+3] = self.zeta_steps_array[f_negative_index:self.step_num+2]
+                #print('after zeta shifting along',self.zeta_steps_array[:self.step_num+3])
+                self.zeta_steps_array[f_negative_index+1] = f_negative_zeta
+                #print('after new zeta added',self.zeta_steps_array[:self.step_num+3])
+                self.step_num += 1
+                
 
 
-    def plot_stratification(self,tau):
+    def plot_stratification(self,tau,analytic):
         if self.figd is None:
             self.figd = plt.figure()
             self.axd = self.figd.add_subplot()
@@ -148,8 +147,27 @@ class box:
             self.axd.set_xlabel("$\\delta$")
             self.axd.set_ylabel("$\\zeta$")
             self.axd.grid()
+        
+        if analytic:
+            if len(self.plume_list) != 1:
+                print("WARNING Analytical solution not intended for use with multiple plumes")
 
-        self.axd.stairs(self.delta_array[:self.step_num],self.zeta_steps_array[:self.step_num+1],orientation='horizontal',baseline=None,label='$\\tau$ = ' + str(tau))
+            zeta_coord = np.linspace(self.zeta_steps_array[1],1,100)
+            front_pos = (1 + 0.2*((18/5)**(1/3))*(tau))**(-3/2) # this is zeta_0
+            f_hat = (1 - front_pos**(5/3))/(1 - front_pos)
+            delta_inf = np.zeros(len(zeta_coord))
+            delta_inf = 5*((5/18)**(1/3))*(zeta_coord**(-2/3))*(1 - zeta_coord*10/39 - (zeta_coord**2)*155/8112)
+            analytical_const = ( 
+            5*((5/18)**(1/3))*((front_pos**(-2/3) - 1)/(1 - front_pos)
+            + 3*(f_hat**(2/3))*((1 - front_pos**(1/3))/(1- front_pos)
+            - (5/78)*(1 - front_pos**(4/3))/(1 - front_pos) 
+            - (155/56784)*(1 - front_pos**(7/3))/(1- front_pos)))
+            )
+            delta_analytic = np.zeros(len(zeta_coord))
+            delta_analytic = -((f_hat**(2/3))*delta_inf - analytical_const)
+            self.axd.plot(delta_analytic,zeta_coord,linestyle='--',color='black')
+
+        self.axd.stairs(self.delta_array[:self.step_num+1],self.zeta_steps_array[:self.step_num+2],orientation='horizontal',baseline=None,label='$\\tau$ = ' + str(tau))
         self.axd.legend()
 
     def plot_volume_flux(self,plume_index,tau):
