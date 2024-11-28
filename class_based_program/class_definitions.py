@@ -134,7 +134,6 @@ class box:
                 self.zeta_steps_array[self.step_num+2] = 1
             
             else:
-                
                 # Finding the zeta value at which f becomes negative
                 f_negative_zeta = self.zeta_steps_array[f_negative_index] + (self.zeta_steps_array[f_negative_index+1]- self.zeta_steps_array[f_negative_index])*(plume_obj.f_array[f_negative_index-1])/(plume_obj.f_array[f_negative_index-1] - plume_obj.f_array[f_negative_index])
 
@@ -150,23 +149,23 @@ class box:
             self.step_num += 1
         
 
-            if self.vent:
-                # Calculate the volume flowing out in step
-                q_vent_out = self.a_star * np.sqrt(np.sum(self.delta_array[0:self.step_num+1] * (self.zeta_steps_array[1:self.step_num+2] - self.zeta_steps_array[0:self.step_num+1]))) * time_step
-                
-                # Shifitng up the steps and finding how many exceed one
-                self.zeta_steps_array[1:self.step_num+2] += q_vent_out
-                choped_steps = np.sum(self.zeta_steps_array > 1) - 1
+        if self.vent:
+            # Calculate the volume flowing out in step
+            q_vent_out = self.a_star * np.sqrt(np.sum(self.delta_array[0:self.step_num+1] * (self.zeta_steps_array[1:self.step_num+2] - self.zeta_steps_array[0:self.step_num+1]))) * time_step
+            
+            # Shifitng up the steps and finding how many exceed one
+            self.zeta_steps_array[1:self.step_num+2] += q_vent_out
+            choped_steps = np.sum(self.zeta_steps_array > 1) - 1
 
-                # Chopping off required steps and making sure final position is at top of container
-                self.zeta_steps_array[self.step_num + 2 - choped_steps : self.step_num +2] = 0
-                self.zeta_steps_array[self.step_num + 1 - choped_steps] = 1
+            # Chopping off required steps and making sure final position is at top of container
+            self.zeta_steps_array[self.step_num + 2 - choped_steps : self.step_num +2] = 0
+            self.zeta_steps_array[self.step_num + 1 - choped_steps] = 1
 
-                # Chopping off required deltas also 
-                self.delta_array[self.step_num + 1 - choped_steps : self.step_num + 1] = 0
+            # Chopping off required deltas also 
+            self.delta_array[self.step_num + 1 - choped_steps : self.step_num + 1] = 0
 
-                # Updating the number of steps in the system
-                self.step_num -= choped_steps
+            # Updating the number of steps in the system
+            self.step_num -= choped_steps
 
                 
                 
@@ -176,9 +175,9 @@ class box:
         if self.figd is None:
             self.figd = plt.figure()
             self.axd = self.figd.add_subplot()
-            self.axd.set_title("Stratification Within Room")
-            self.axd.set_xlabel("$\\delta$")
-            self.axd.set_ylabel("$\\zeta$")
+            self.axd.set_title("Stratification Within Room",fontsize=14)
+            self.axd.set_xlabel("$\\delta$",fontsize=14)
+            self.axd.set_ylabel("$\\zeta$",fontsize=14)
             self.axd.grid()
         
         if analytic:
@@ -211,9 +210,9 @@ class box:
         if plume_obj.figq is None:
             plume_obj.figq = plt.figure()
             plume_obj.axq = plume_obj.figq.add_subplot()
-            plume_obj.axq.set_title("Plume Index: " + str(plume_index))
-            plume_obj.axq.set_xlabel("$q$")
-            plume_obj.axq.set_ylabel("$\\zeta$")
+            plume_obj.axq.set_title("Plume Index: " + str(plume_index),fontsize=14)
+            plume_obj.axq.set_xlabel("$q$",fontsize=14)
+            plume_obj.axq.set_ylabel("$\\zeta$",fontsize=14)
             plume_obj.axq.grid()
     
         plotting_zeta = np.zeros(100 + self.step_num)
@@ -232,9 +231,9 @@ class box:
         if plume_obj.figm is None:
             plume_obj.figm = plt.figure()
             plume_obj.axm = plume_obj.figm.add_subplot()
-            plume_obj.axm.set_title("Plume Index: " + str(plume_index))
-            plume_obj.axm.set_xlabel("$m$")
-            plume_obj.axm.set_ylabel("$\\zeta$")
+            plume_obj.axm.set_title("Plume Index: " + str(plume_index),fontsize=14)
+            plume_obj.axm.set_xlabel("$m$",fontsize=14)
+            plume_obj.axm.set_ylabel("$\\zeta$",fontsize=14)
             plume_obj.axm.grid()
     
         plotting_zeta = np.zeros(100 + self.step_num)
@@ -255,9 +254,9 @@ class box:
         if plume_obj.figf is None:
             plume_obj.figf = plt.figure()
             plume_obj.axf = plume_obj.figf.add_subplot()
-            plume_obj.axf.set_title("Plume Index: " + str(plume_index))
-            plume_obj.axf.set_xlabel("$f$")
-            plume_obj.axf.set_ylabel("$\\zeta$")
+            plume_obj.axf.set_title("Plume Index: " + str(plume_index),fontsize=14)
+            plume_obj.axf.set_xlabel("$f$",fontsize=14)
+            plume_obj.axf.set_ylabel("$\\zeta$",fontsize=14)
             plume_obj.axf.grid()
     
         plotting_zeta = np.zeros(100 + self.step_num)
@@ -270,7 +269,6 @@ class box:
         
         plume_obj.axf.plot(plotting_f,plotting_zeta,label='$\\tau = $' + str(tau))
         plume_obj.axf.legend()
-
 
     def plume_printer(self):
         for plume_obj in self.plume_list:
