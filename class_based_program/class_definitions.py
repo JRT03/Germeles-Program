@@ -27,9 +27,8 @@ class plume:
 
 
 class box:
-    def __init__(self,inital_delta,inital_zeta_steps,time_array,plume_list):
+    def __init__(self,plume_list,time_array,inital_delta=np.array([]),inital_zeta_steps=np.array([]),a_star_vent=0):
     
-        
         # Handling the intial stratification delta values
         if not isinstance(inital_delta, np.ndarray):
             raise Exception('Inital delta should be an array or list')
@@ -39,13 +38,26 @@ class box:
         # Handling the intial stratification zeta steps
         if not isinstance(inital_zeta_steps, np.ndarray):
             raise Exception('Inital delta should be an array or list')
-        
         self.zeta_steps_array = np.zeros(len(inital_zeta_steps) + len(time_array) + 2)
         self.zeta_steps_array[1:len(inital_zeta_steps)+1] = inital_zeta_steps[:]
         self.zeta_steps_array[len(inital_zeta_steps)+1] = 1
 
+        if not len(inital_zeta_steps) == len(inital_delta):
+            raise Exception('Inital stratification deltas must be same length as zeta steps')
+
+        # Setting numbr of inital steps
         self.step_num = len(inital_zeta_steps)
 
+        # Hanling the ventilation input
+        if not isinstance(a_star_vent,(int,float)):
+            raise Exception('The a_star for the ventilation should be numeric')
+        self.a_star = a_star_vent * (1/8) * ((5/2)**(1/2)) * ((6/5)**(5/2))
+        if self.a_star > 0:
+            self.vent = True
+        else:
+            self.vent = False
+
+        # Handling the plumes input
         self.plume_list = plume_list
         for plume_obj in self.plume_list:
             if not isinstance(plume_obj, plume):
@@ -91,17 +103,19 @@ class box:
         
     def solve_plume(self):
         for plume_obj in self.plume_list:
+            # Finding the plume quantities at the bottom of th stratification using analytical solution
             plume_obj.q_array[0] = self.free_q(self.zeta_steps_array[1])
             plume_obj.m_array[0] = self.free_m(self.zeta_steps_array[1])
             plume_obj.f_array[0] = 1
 
-
+            # Solving each step one by one using RK4 scheme
             for i in range(self.step_num):
                 step = self.zeta_steps_array[i+2] - self.zeta_steps_array[i+1]
                 plume_obj.q_array[i+1],plume_obj.m_array[i+1],plume_obj.f_array[i+1] = self.zeta_integrationRK4(step,plume_obj.f_array[i],plume_obj.q_array[i],plume_obj.m_array[i],self.delta_array[i+1],self.delta_array[i])
 
 
     def deposit_layer(self,time_step):
+        # Find the index at which the plume becomes negatively bouyant
         for plume_obj in self.plume_list:
             f_negative_index = None
             for i in range(self.step_num+1):
@@ -110,32 +124,51 @@ class box:
                     break
             
             if f_negative_index is None:
+                # Depositing plume at top of container
                 self.delta_array[self.step_num+1] = self.delta_array[self.step_num] + plume_obj.f_array[self.step_num]/plume_obj.q_array[self.step_num]
+                
+                # Updating the lower region
                 self.zeta_steps_array[1:self.step_num+2] = self.zeta_steps_array[1:self.step_num+2] - plume_obj.q_array[0:self.step_num+1]*time_step
+                
+                # Ensuring the final position in the domain is the top of the container
                 self.zeta_steps_array[self.step_num+2] = 1
-                self.step_num +=1
             
             else:
-                #print('begin solve')
-                #print('f_negative index: ',f_negative_index)
+                
+                # Finding the zeta value at which f becomes negative
                 f_negative_zeta = self.zeta_steps_array[f_negative_index] + (self.zeta_steps_array[f_negative_index+1]- self.zeta_steps_array[f_negative_index])*(plume_obj.f_array[f_negative_index-1])/(plume_obj.f_array[f_negative_index-1] - plume_obj.f_array[f_negative_index])
-                #print('f_negative zeta:',f_negative_zeta)
-                #print('previous delta:',self.delta_array[:self.step_num+1])
+
+                # Updating the deltas to include deposition of plume
                 self.delta_array[f_negative_index+1:self.step_num+2] = self.delta_array[f_negative_index:self.step_num+1]
                 self.delta_array[f_negative_index+1] = self.delta_array[f_negative_index]
-                #print('new delta:',self.delta_array[:self.step_num+1])
-                
-                #print('begin alteration of arrays')
-                #print('first zeta steps', print(self.zeta_steps_array[:self.step_num+2]))
+
+                # Updating the zeta steps due to deoposition of plume
                 self.zeta_steps_array[1:f_negative_index+1] = self.zeta_steps_array[1:f_negative_index+1] - plume_obj.q_array[0:f_negative_index]*time_step
-                #print('after squeezing below',print(self.zeta_steps_array[:self.step_num+2]))
-                
-                
                 self.zeta_steps_array[f_negative_index+1:self.step_num+3] = self.zeta_steps_array[f_negative_index:self.step_num+2]
-                #print('after zeta shifting along',self.zeta_steps_array[:self.step_num+3])
                 self.zeta_steps_array[f_negative_index+1] = f_negative_zeta
-                #print('after new zeta added',self.zeta_steps_array[:self.step_num+3])
-                self.step_num += 1
+
+            self.step_num += 1
+        
+
+            if self.vent:
+                # Calculate the volume flowing out in step
+                q_vent_out = self.a_star * np.sqrt(np.sum(self.delta_array[0:self.step_num+1] * (self.zeta_steps_array[1:self.step_num+2] - self.zeta_steps_array[0:self.step_num+1]))) * time_step
+                
+                # Shifitng up the steps and finding how many exceed one
+                self.zeta_steps_array[1:self.step_num+2] += q_vent_out
+                choped_steps = np.sum(self.zeta_steps_array > 1) - 1
+
+                # Chopping off required steps and making sure final position is at top of container
+                self.zeta_steps_array[self.step_num + 2 - choped_steps : self.step_num +2] = 0
+                self.zeta_steps_array[self.step_num + 1 - choped_steps] = 1
+
+                # Chopping off required deltas also 
+                self.delta_array[self.step_num + 1 - choped_steps : self.step_num + 1] = 0
+
+                # Updating the number of steps in the system
+                self.step_num -= choped_steps
+
+                
                 
 
 
@@ -150,7 +183,10 @@ class box:
         
         if analytic:
             if len(self.plume_list) != 1:
-                print("WARNING Analytical solution not intended for use with multiple plumes")
+                print("WARNING Analytical solution not valid with multiple plumes")
+            
+            if self.vent:
+                print('WARNING Analytical solution not valid with ventilation')
 
             zeta_coord = np.linspace(self.zeta_steps_array[1],1,100)
             front_pos = (1 + 0.2*((18/5)**(1/3))*(tau))**(-3/2) # this is zeta_0
